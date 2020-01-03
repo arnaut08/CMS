@@ -43,7 +43,7 @@ def updateCredentialFields(con, data):
 def getCredentials():
         con = connection
         with con.cursor() as cursor:
-                sql = "SELECT * FROM credential AS c RIGHT JOIN field AS f ON f.credentialId = c.id groupBy()"
+                sql = "SELECT c.id, c.name, c.projectId, c.createdBy, c.version, c.createdAt, c.description FROM credential AS c LEFT JOIN (SELECT id, max(version) AS latest FROM credential GROUP BY id) AS mx ON mx.id = c.id WHERE version = latest"
                 cursor.execute(sql)
                 data = cursor.fetchall()
         con.close()
