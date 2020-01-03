@@ -8,4 +8,4 @@ server.register_blueprint(credentialBlueprint)
 @server.errorhandler(404)
 @server.errorhandler(405)
 def not_found(error):
-    return jsonify(error='The requested URL was not found')
+    return jsonify(error='The requested URL was not found'), error.code

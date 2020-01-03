@@ -8,28 +8,32 @@ import json
 
 credentialBlueprint = Blueprint('credentialBlueprint', __name__, url_prefix= "/credential")
 
-@credentialBlueprint.route('', methods=['POST','PUT'])
-def addOrUpdateCredential():
+@credentialBlueprint.route('', methods=['POST', 'PUT', 'GET'])
+def manageCredential():
     try:
-        credentialData = CredentialModel(request.form)
-        fieldValidity = True
-        for field in (json.loads(request.form['fields'])):
-            newDict = im.copy(field)
-            fieldData = FieldModel(newDict)
-            errorObj = {}
-            if not fieldData.validate():
-                fieldValidity = False
-                errorObj = fieldData.errors
-                break
-
-        if credentialData.validate() and fieldValidity:
-            if request.method == 'POST':
-                utils.addCredential(request.form)
-                return jsonify(message = 'Credential Added Successfully'), constants.statusCode['success']
-            elif request.method == 'PUT':
-                utils.updateCredential(request.form)
-                return jsonify(message = 'Credential Updated Successfully'), constants.statusCode['success']
+        if request.method == 'GET':
+            result = utils.getCredentials()
+            return jsonify(result), constants.statusCode['success']
         else:
-            return jsonify(credentialData.errors or errorObj), constants.statusCode['error']['badRequest']
+            credentialData = CredentialModel(request.form)
+            fieldValidity = True
+            for field in (json.loads(request.form['fields'])):
+                newDict = im.copy(field)
+                fieldData = FieldModel(newDict)
+                errorObj = {}
+                if not fieldData.validate():
+                    fieldValidity = False
+                    errorObj = fieldData.errors
+                    break
+
+            if credentialData.validate() and fieldValidity:
+                if request.method == 'POST':
+                    utils.addCredential(request.form)
+                    return jsonify(message = 'Credential Added Successfully'), constants.statusCode['success']
+                elif request.method == 'PUT':
+                    utils.updateCredential(request.form)
+                    return jsonify(message = 'Credential Updated Successfully'), constants.statusCode['success']
+            else:
+                return jsonify(credentialData.errors or errorObj), constants.statusCode['error']['badRequest']
     except:
         return jsonify(error = 'Internal Server Error'), constants.statusCode['error']['internalServer']
