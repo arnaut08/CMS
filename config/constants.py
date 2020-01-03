@@ -8,3 +8,5 @@ statusCode = {
         'notFound': 404,
     }
 }
+
+fieldTypes = ['username', 'password', 'file', 'key', 'software']

@@ -6,5 +6,6 @@ server.register_blueprint(credentialBlueprint)
 
 # For all the undefined routes
 @server.errorhandler(404)
+@server.errorhandler(405)
 def not_found(error):
     return jsonify(error='The requested URL was not found')
