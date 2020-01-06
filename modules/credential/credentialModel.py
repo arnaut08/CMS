@@ -1,9 +1,9 @@
-from wtforms import StringField, IntegerField, DateTimeField, validators, Form
+from wtforms import StringField, IntegerField, DateTimeField, validators, Form, ValidationError
 from config import constants
 
 
 def validateFieldType(form, field):
-    if constants.fieldTypes.index(field.data) == -1:
+    if field.data not in constants.fieldTypes:
         raise ValidationError("fieldType must be a value from the following set : {}".format(constants.fieldTypes))
 
 
