@@ -3,7 +3,7 @@ from config import constants
 import json
 from modules.auth.authModel import AuthModel
 
-authBlueprint = Blueprint('authBlueprint', __name__, url_prefix= "/login")
+authBlueprint = Blueprint('authBlueprint', __name__)
 
 @authBlueprint.route("", methods=['POST'])
 def login():

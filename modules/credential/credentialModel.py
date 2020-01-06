@@ -11,7 +11,7 @@ class CredentialModel(Form):
     id = StringField('id')
     name = StringField('name', [validators.DataRequired(), validators.Length(max=45)])
     projectId = IntegerField('projectId', [validators.DataRequired()])
-    createdBy = IntegerField('createdBy', [validators.DataRequired()])
+    createdBy = IntegerField('createdBy')
     version = IntegerField('version')
     createdAt = DateTimeField('createdAt')
     description = StringField('description')

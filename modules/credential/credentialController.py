@@ -24,11 +24,17 @@ def manageCredential():
 
     if credentialData.validate() and fieldValidity:
         if request.method == 'POST':
-            utils.addCredential(request.form)
-            return jsonify(message = 'Credential Added Successfully'), constants.statusCode['success']
+            added = utils.addCredential(request.form)
+            if added:
+                return jsonify(message = 'Credential Added Successfully'), constants.statusCode['success']
+            else:
+                return jsonify(error = "You don't have permission to add a credential in this project"), constants.statusCode['error']['badRequest']
         elif request.method == 'PUT':
-            utils.updateCredential(request.form)
-            return jsonify(message = 'Credential Updated Successfully'), constants.statusCode['success']
+            updated = utils.updateCredential(request.form)
+            if updated:
+                return jsonify(message = 'Credential Updated Successfully'), constants.statusCode['success']
+            else:
+                return jsonify(error = "You don't have permission to update this credential"), constants.statusCode['error']['badRequest']                
     else:
         return jsonify(credentialData.errors or errorObj), constants.statusCode['error']['badRequest']
 

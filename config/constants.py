@@ -10,3 +10,11 @@ statusCode = {
 }
 
 fieldTypes = ['username', 'password', 'file', 'key', 'software']
+
+# Event Comments Skeleton
+addCredential = " added credential "
+updateCredential = " updated credential "
+giveAccess = " gave access to "
+updatedAccess = " updated access of "
+forCredential = " for credential "
+inProject = " in project "
