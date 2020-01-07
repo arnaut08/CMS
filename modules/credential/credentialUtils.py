@@ -53,6 +53,8 @@ def addCredentialFields(con, data, credentialId):
                 sql = "INSERT INTO field(id, credentialId, fieldType, label, value) VALUES (%s, %s, %s, %s, %s)"
                 cursor.executemany(sql, values)
                 con.commit()
+                cursor.close()
+
 
 def updateCredentialFields(con, data):
         with con.cursor() as cursor:
@@ -64,16 +66,27 @@ def updateCredentialFields(con, data):
                 sql = "INSERT INTO field(id, credentialId, fieldType, label, value, version) VALUES (%s, %s, %s, %s, %s, %s)"
                 cursor.executemany(sql, values)
                 con.commit()
+                cursor.close()
+
 
 def getProjectCredentials(keys):
         con = connect()
+        # Credential data of a particular project
         with con.cursor() as cursor:
                 limit = "LIMIT {}, {}".format((int(keys['page'])*int(keys['limit'])), int(keys['limit']))
                 sql = "SELECT a.userId, a.canRead, a.canWrite, a.description  accessDesc, c.name AS credential, c.id, c.version, c.description AS credDesc, f.id, f.label, f.value FROM accessPermission AS a LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) LEFT JOIN (Select id, max(version) AS latest FROM credential group by id) AS mx ON mx.id = c.id LEFT JOIN field AS f ON f.credentialId = c.id WHERE c.version = latest AND a.canRead = 1 AND a.userId = {} AND f.version = latest AND c.projectId = {} {}".format(current_identity['userId'], keys['pId'], limit)                
                 cursor.execute(sql)
-                data = cursor.fetchall()
+                projectData = cursor.fetchall()
+                cursor.close()
+        
+        # Event data related to the project
+        with con.cursor() as cursor:
+                sql = "SELECT * FROM events WHERE projectId = {}".format(keys['pId'])                
+                cursor.execute(sql)
+                eventData = cursor.fetchall()
+                cursor.close()
         con.close()
-        return data
+        return { 'projectData': projectData, 'eventData': eventData }
 
 def getProjects(keys):
         con = connect()
@@ -82,6 +95,7 @@ def getProjects(keys):
                 sql = "SELECT p.id, p.name FROM accessPermission AS a LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) LEFT JOIN project AS p ON p.id = c.projectId WHERE a.canRead = 1 AND a.userId = {} GROUP BY p.id {}".format(current_identity['userId'], limit)                
                 cursor.execute(sql)
                 data = cursor.fetchall()
+                cursor.close()
         con.close()
         return data
 
@@ -91,6 +105,7 @@ def checkCredentialAccess(credentialId):
                 sql = "SELECT c.id FROM accessPermission AS a LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) WHERE a.userId = {} AND c.id = '{}' AND canWrite = 1".format(current_identity['userId'], credentialId)                                
                 cursor.execute(sql)
                 data = cursor.fetchall()
+                cursor.close()
         con.close()
         return bool(len(data))
 
@@ -100,14 +115,31 @@ def checkProjectAccess(projectId):
                 sql = "SELECT a.id FROM accessPermission AS a WHERE a.userId = {} AND a.projectId = {} AND canWrite = 1".format(current_identity['userId'], projectId)                                
                 cursor.execute(sql)
                 data = cursor.fetchall()
+                cursor.close()
         con.close()
         return bool(len(data))
 
 def getCredentialDetails(credentialId):
         con = connect()
+        # Credential Data
         with con.cursor() as cursor:
                 sql = "SELECT * FROM credential AS c LEFT JOIN field AS f ON f.credentialId = c.id AND f.version = c.version WHERE c.id = '{}'".format(credentialId)                
                 cursor.execute(sql)
-                data = cursor.fetchall()
+                credentialData = cursor.fetchall()
+                cursor.close()
+        
+        # Event data related to the credential
+        with con.cursor() as cursor:
+                sql = "SELECT * FROM events WHERE credentialId = '{}'".format(credentialId)                
+                cursor.execute(sql)
+                eventData = cursor.fetchall()
+                cursor.close()
+
+        # Access permission data related to the credential
+        with con.cursor() as cursor:
+                sql = "SELECT a.*, u.name FROM accessPermission AS a LEFT JOIN user AS u ON a.userId = u.id WHERE (a.credentialId = '{0}' OR a.projectId = (SELECT projectId FROM credential WHERE id = '{0}' GROUP BY projectId))".format(credentialId)                
+                cursor.execute(sql)
+                accessData = cursor.fetchall()
+                cursor.close()
         con.close()
-        return data
+        return { 'credentialData': credentialData, 'eventData': eventData, 'accessData': accessData }
