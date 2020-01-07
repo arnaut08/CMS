@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, request
 from config import constants
-import json
 from modules.auth.authModel import AuthModel
 
 authBlueprint = Blueprint('authBlueprint', __name__)
