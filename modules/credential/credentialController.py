@@ -44,3 +44,10 @@ def getProjectsAndCredentials():
     keys = dict(request.args).keys()
     result = utils.getProjectCredentials(request.args) if ('pId' in keys) else utils.getProjects(request.args)
     return jsonify(result), constants.statusCode['success']
+
+@credentialBlueprint.route('/<string:credentialId>')
+@jwt_required()
+def getCredentialDetails(credentialId):
+    result = utils.getCredentialDetails(credentialId)
+    return jsonify(result), constants.statusCode['success']
+    

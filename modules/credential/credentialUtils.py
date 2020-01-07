@@ -102,3 +102,12 @@ def checkProjectAccess(projectId):
                 data = cursor.fetchall()
         con.close()
         return bool(len(data))
+
+def getCredentialDetails(credentialId):
+        con = connect()
+        with con.cursor() as cursor:
+                sql = "SELECT * FROM credential AS c LEFT JOIN field AS f ON f.credentialId = c.id AND f.version = c.version WHERE c.id = '{}'".format(credentialId)                
+                cursor.execute(sql)
+                data = cursor.fetchall()
+        con.close()
+        return data
