@@ -45,9 +45,23 @@ def getProjectsAndCredentials():
     result = utils.getProjectCredentials(request.args) if ('pId' in keys) else utils.getProjects(request.args)
     return jsonify(result), constants.statusCode['success']
 
-@credentialBlueprint.route('/<string:credentialId>')
+
+@credentialBlueprint.route('/<string:credentialId>', methods=['GET'])
 @jwt_required()
 def getCredentialDetails(credentialId):
     result = utils.getCredentialDetails(credentialId)
     return jsonify(result), constants.statusCode['success']
-    
+
+
+@credentialBlueprint.route('/star', methods=['GET', 'POST'])
+@jwt_required()
+def manageStarredCredentials():
+    if request.method == 'GET':
+        result = utils.getFavouriteCredentials()
+        return jsonify(result), constants.statusCode['success']
+    else:
+        starred = utils.manageFavouriteCredential(request.form)
+        if starred:
+            return jsonify(message = 'Credential Added to Favourites Successfully'), constants.statusCode['success']
+        else:
+            return jsonify(message = "Credential Removed from Favourites Successfully"), constants.statusCode['success']

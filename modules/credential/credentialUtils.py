@@ -18,7 +18,7 @@ def addCredential(data):
                 
                 # To insert in the event table
                 with con.cursor() as cursor:
-                        sql = "INSERT INTO events(credentialId, projectId, userId, comments) VALUES ('{cred}', {project}, {user},concat((select name from user where id={user}), '{operation}', '{credName}', '{where}', (select name from project where id={project})))".format(user = current_identity['userId'], cred = key, project = data['projectId'], credName = data['name'], operation = constants.addCredential, where = constants.inProject)
+                        sql = "INSERT INTO events(credentialId, projectId, userId, comments) VALUES ('{cred}', {project}, {user},concat((select full_name from employee where id={user}), '{operation}', '{credName}', '{where}', (select project_name from project where id={project})))".format(user = current_identity['userId'], cred = key, project = data['projectId'], credName = data['name'], operation = constants.addCredential, where = constants.inProject)
                         cursor.execute(sql)
                         con.commit()
                         cursor.close()
@@ -39,7 +39,7 @@ def updateCredential(data):
 
                 # To insert in the event table
                 with con.cursor() as cursor:
-                        sql = "INSERT INTO events(credentialId, projectId, userId, comments) VALUES ('{cred}', {projectId}, {user}, concat((select name from user where id={user}), '{operation}', '{credName}', '{where}', (select name from project where id={projectId})))".format(user = current_identity['userId'], cred = data['id'], projectId = data['projectId'], credName = data['name'], operation = constants.updateCredential, where = constants.inProject)
+                        sql = "INSERT INTO events(credentialId, projectId, userId, comments) VALUES ('{cred}', {projectId}, {user}, concat((select full_name from employee where id={user}), '{operation}', '{credName}', '{where}', (select project_name from project where id={projectId})))".format(user = current_identity['userId'], cred = data['id'], projectId = data['projectId'], credName = data['name'], operation = constants.updateCredential, where = constants.inProject)
                         cursor.execute(sql)
                         con.commit()
                         cursor.close()
@@ -92,7 +92,7 @@ def getProjects(keys):
         con = connect()
         with con.cursor() as cursor:
                 limit = "LIMIT {}, {}".format((int(keys['page'])*int(keys['limit'])), int(keys['limit']))
-                sql = "SELECT p.id, p.name FROM accessPermission AS a LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) LEFT JOIN project AS p ON p.id = c.projectId WHERE a.canRead = 1 AND a.userId = {} GROUP BY p.id {}".format(current_identity['userId'], limit)                
+                sql = "SELECT p.id, p.project_name FROM accessPermission AS a LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) LEFT JOIN project AS p ON p.id = c.projectId WHERE a.canRead = 1 AND a.userId = {} GROUP BY p.id {}".format(current_identity['userId'], limit)                
                 cursor.execute(sql)
                 data = cursor.fetchall()
                 cursor.close()
@@ -137,9 +137,33 @@ def getCredentialDetails(credentialId):
 
         # Access permission data related to the credential
         with con.cursor() as cursor:
-                sql = "SELECT a.*, u.name FROM accessPermission AS a LEFT JOIN user AS u ON a.userId = u.id WHERE (a.credentialId = '{0}' OR a.projectId = (SELECT projectId FROM credential WHERE id = '{0}' GROUP BY projectId))".format(credentialId)                
+                sql = "SELECT a.*, e.full_name FROM accessPermission AS a LEFT JOIN employee AS e ON a.userId = e.id WHERE (a.credentialId = '{0}' OR a.projectId = (SELECT projectId FROM credential WHERE id = '{0}' GROUP BY projectId))".format(credentialId)                
                 cursor.execute(sql)
                 accessData = cursor.fetchall()
                 cursor.close()
         con.close()
         return { 'credentialData': credentialData, 'eventData': eventData, 'accessData': accessData }
+
+def getFavouriteCredentials():
+        con = connect()
+        with con.cursor() as cursor:
+                sql = "SELECT c.id AS credential, c.name, c.version, c.description, f.id, f.label, f.value FROM credential AS c LEFT JOIN field AS f ON f.credentialId = c.id AND f.version = c.version LEFT JOIN (Select id, max(version) AS latest FROM credential group by id) AS mx ON mx.id = c.id WHERE c.version = latest AND IF(JSON_CONTAINS_PATH(starredBy,'all',REPLACE(JSON_SEARCH(starredBy, 'one', {}), '\"', '')), 1, 0) = 1".format(current_identity['userId'])                
+                cursor.execute(sql)
+                data = cursor.fetchall()
+                cursor.close()
+        con.close()
+        return data
+
+def manageFavouriteCredential(params):
+        con = connect()
+        starred = bool(int(params['star']))
+        with con.cursor() as cursor:
+                if starred:
+                        sql = "UPDATE credential SET starredBy = IF(JSON_CONTAINS_PATH(starredBy,'all',REPLACE(JSON_SEARCH(starredBy, 'one', {0}), '\"', '')), starredBy, JSON_ARRAY_INSERT(starredBy, '$[0]','{0}')) WHERE id = '{1}'".format(current_identity['userId'], params['credentialId'])
+                else:
+                        sql = "UPDATE credential SET starredBy = JSON_REMOVE(starredBy, REPLACE(JSON_SEARCH(starredBy, 'one', {}), '\"', '')) WHERE id = '{}'".format(current_identity['userId'], params['credentialId'])
+                cursor.execute(sql)
+                con.commit()
+                cursor.close()
+        con.close()
+        return starred

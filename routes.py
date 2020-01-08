@@ -1,13 +1,11 @@
 from app import server
 from flask import jsonify
 from modules.credential.credentialController import credentialBlueprint
-from modules.auth.authController import authBlueprint
 from modules.search.searchController import searchBlueprint
 from modules.access.accessController import accessBlueprint
 
 server.register_blueprint(accessBlueprint, url_prefix= "/access")
 server.register_blueprint(credentialBlueprint, url_prefix= "/credential")
-server.register_blueprint(authBlueprint, url_prefix= "/login")
 server.register_blueprint(searchBlueprint, url_prefix= "/search")
 
 # For all the undefined routes

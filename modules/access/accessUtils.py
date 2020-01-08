@@ -14,7 +14,7 @@ def addAccessPermission(data):
             
         # To insert in the event table
         with con.cursor() as cursor:
-            sql = "INSERT INTO events(credentialId, projectId, userId, comments) (Select '{cred}', projectId, {assignee}, concat((select name from user where id={assignee}), '{operation}', (select name from user where id={user}), '{source}', (select name from credential where id='{cred}' group by id)) FROM credential WHERE id = '{cred}' GROUP BY projectId)".format(assignee = current_identity['userId'], cred = data['credentialId'], operation = constants.giveAccess, source = constants.forCredential, user = data['userId'])
+            sql = "INSERT INTO events(credentialId, projectId, userId, comments) (Select '{cred}', projectId, {assignee}, concat((select full_name from employee where id={assignee}), '{operation}', (select full_name from employee where id={user}), '{source}', (select name from credential where id='{cred}' group by id)) FROM credential WHERE id = '{cred}' GROUP BY projectId)".format(assignee = current_identity['userId'], cred = data['credentialId'], operation = constants.giveAccess, source = constants.forCredential, user = data['userId'])
             cursor.execute(sql)
             con.commit()
             cursor.close() 
@@ -36,7 +36,7 @@ def addAccessPermission(data):
 
         # To insert in the event table
         with con.cursor() as cursor:
-            sql = "INSERT INTO events(projectId, userId, comments) VALUES ({project}, {assignee}, concat((SELECT name FROM user WHERE id={assignee}), '{operation}', (SELECT name FROM user WHERE id={user}), '{source}', (SELECT name FROM project WHERE id={project})))".format(assignee = current_identity['userId'], project = data['projectId'], operation = constants.giveAccess , source = constants.forProject, user = data['userId'])
+            sql = "INSERT INTO events(projectId, userId, comments) VALUES ({project}, {assignee}, concat((SELECT full_name from employee WHERE id={assignee}), '{operation}', (SELECT full_name from employee WHERE id={user}), '{source}', (SELECT project_name FROM project WHERE id={project})))".format(assignee = current_identity['userId'], project = data['projectId'], operation = constants.giveAccess , source = constants.forProject, user = data['userId'])
             cursor.execute(sql)
             con.commit()
             cursor.close() 
@@ -54,7 +54,7 @@ def updateAccessPermission(data):
 
         # To insert in the event table
         with con.cursor() as cursor:
-            sql = "INSERT INTO events(credentialId, projectId, userId, comments) (Select '{cred}', projectId, {assignee}, concat((select name from user where id={assignee}), '{operation}', (select name from user where id={user}), '{source}', (select name from credential where id='{cred}' group by id)) FROM credential WHERE id = '{cred}' GROUP BY projectId)".format(assignee = current_identity['userId'], cred = data['credentialId'], operation = constants.updateAccess, source = constants.forCredential, user = data['userId'])
+            sql = "INSERT INTO events(credentialId, projectId, userId, comments) (Select '{cred}', projectId, {assignee}, concat((select full_name from employee where id={assignee}), '{operation}', (select full_name from employee where id={user}), '{source}', (select name from credential where id='{cred}' group by id)) FROM credential WHERE id = '{cred}' GROUP BY projectId)".format(assignee = current_identity['userId'], cred = data['credentialId'], operation = constants.updateAccess, source = constants.forCredential, user = data['userId'])
             cursor.execute(sql)
             con.commit()
             cursor.close() 
@@ -70,7 +70,7 @@ def updateAccessPermission(data):
         
         # To insert in the event table
         with con.cursor() as cursor:
-            sql = "INSERT INTO events(projectId, userId, comments) VALUES ({project}, {assignee}, concat((SELECT name FROM user WHERE id={assignee}), '{operation}', (SELECT name FROM user WHERE id={user}), '{source}', (SELECT name FROM project WHERE id={project})))".format(assignee = current_identity['userId'], project = data['projectId'], operation = constants.updateAccess , source = constants.forProject, user = data['userId'])
+            sql = "INSERT INTO events(projectId, userId, comments) VALUES ({project}, {assignee}, concat((SELECT full_name from employee WHERE id={assignee}), '{operation}', (SELECT full_name from employee WHERE id={user}), '{source}', (SELECT project_name FROM project WHERE id={project})))".format(assignee = current_identity['userId'], project = data['projectId'], operation = constants.updateAccess , source = constants.forProject, user = data['userId'])
             cursor.execute(sql)
             con.commit()
             cursor.close() 
