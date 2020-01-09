@@ -7,12 +7,12 @@ class User(object):
         self.id = id
         self.name = name
     
-    def getName(self):
-        return self.name
+    def getValues(self):
+        return {'name':self.name , 'id':self.id}
 
 def responseHandler(token, identity):
-    name = identity.getName()
-    return jsonify({'access_token': token.decode('utf-8'), 'name': name})
+    user = identity.getValues()
+    return jsonify({'access_token': token.decode('utf-8'), 'name': user['name'], 'id': user['id'] })
 
 
 def verify(email, password):

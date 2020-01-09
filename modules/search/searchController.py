@@ -12,6 +12,6 @@ def search():
     params = dict(request.args).keys()
     if 'keyword' in params:
         result = utils.getSearchedCredentials(request.args)
-        return jsonify(result), constants.statusCode['success']    
+        return jsonify(data = result), constants.statusCode['success']    
     else:
         return jsonify(error = "Keyword is required."), constants.statusCode['error']['badRequest']

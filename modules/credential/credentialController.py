@@ -43,14 +43,14 @@ def manageCredential():
 def getProjectsAndCredentials():
     keys = dict(request.args).keys()
     result = utils.getProjectCredentials(request.args) if ('pId' in keys) else utils.getProjects(request.args)
-    return jsonify(result), constants.statusCode['success']
+    return jsonify(data = result), constants.statusCode['success']
 
 
 @credentialBlueprint.route('/<string:credentialId>', methods=['GET'])
 @jwt_required()
 def getCredentialDetails(credentialId):
     result = utils.getCredentialDetails(credentialId)
-    return jsonify(result), constants.statusCode['success']
+    return jsonify(data = result), constants.statusCode['success']
 
 
 @credentialBlueprint.route('/star', methods=['GET', 'POST'])
@@ -58,7 +58,7 @@ def getCredentialDetails(credentialId):
 def manageStarredCredentials():
     if request.method == 'GET':
         result = utils.getFavouriteCredentials()
-        return jsonify(result), constants.statusCode['success']
+        return jsonify(data = result), constants.statusCode['success']
     else:
         starred = utils.manageFavouriteCredential(request.form)
         if starred:

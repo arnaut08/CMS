@@ -142,7 +142,11 @@ def getCredentialDetails(credentialId):
                 accessData = cursor.fetchall()
                 cursor.close()
         con.close()
-        return { 'credentialData': credentialData, 'eventData': eventData, 'accessData': accessData }
+        hasWriteAccess = 0
+        for data in accessData:
+                if (data['canWrite'] and data['userId'] == current_identity['userId']):
+                        hasWriteAccess = 1
+        return { 'credentialData': credentialData, 'eventData': eventData, 'accessData': accessData, 'hasWriteAccess': hasWriteAccess }
 
 def getFavouriteCredentials():
         con = connect()
