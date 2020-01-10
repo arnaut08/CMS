@@ -4,16 +4,17 @@ from modules.credential.credentialModel import CredentialModel, FieldModel
 from config import constants
 from werkzeug.datastructures import ImmutableMultiDict as im
 from flask_jwt import jwt_required
-import json
+import json, os
 
 credentialBlueprint = Blueprint('credentialBlueprint', __name__)
 
 @credentialBlueprint.route('', methods=['POST', 'PUT'])
 @jwt_required()
 def manageCredential():
-    credentialData = CredentialModel(request.form)
+    data = im.copy(json.loads(request.data.decode('utf8')))
+    credentialData = CredentialModel(data)
     fieldValidity = True
-    for field in (json.loads(request.form['fields'])):
+    for field in json.loads(data['fields']):
         newDict = im.copy(field)
         fieldData = FieldModel(newDict)
         errorObj = {}
@@ -24,7 +25,7 @@ def manageCredential():
 
     if credentialData.validate() and fieldValidity:
         if request.method == 'POST':
-            added = utils.addCredential(request.form)
+            added = utils.addCredential(data)
             if added:
                 return jsonify(message = 'Credential Added Successfully'), constants.statusCode['success']
             else:
@@ -60,8 +61,27 @@ def manageStarredCredentials():
         result = utils.getFavouriteCredentials()
         return jsonify(data = result), constants.statusCode['success']
     else:
-        starred = utils.manageFavouriteCredential(request.form)
+        starred = utils.manageFavouriteCredential(json.loads(request.data.decode('utf8')))
         if starred:
             return jsonify(message = 'Credential Added to Favourites Successfully'), constants.statusCode['success']
         else:
             return jsonify(message = "Credential Removed from Favourites Successfully"), constants.statusCode['success']
+
+@credentialBlueprint.route('/upload', methods=['POST', 'DELETE'])
+@jwt_required()
+def uploadFile():
+    data = request.form
+    if request.method == 'POST':
+        currentFilePath = os.path.dirname(os.path.realpath(__file__))
+        projectPath = currentFilePath[0: currentFilePath[0: currentFilePath.rindex("/")].rindex("/")]
+        uploadPath = "{}/uploads/{}/{}".format(projectPath, data['projectName'], data['credentialName'])
+        files = request.files['file']
+        try:
+            files.save(os.path.join(uploadPath, files.filename))
+        except FileNotFoundError:
+            os.makedirs(uploadPath)
+            files.save(os.path.join(uploadPath, files.filename))
+        return jsonify(message = "File Uploaded Successfully", path = os.path.join(uploadPath, files.filename))
+    else:
+        os.remove(data['filePath'])
+        return jsonify(message = "File Removed Successfully")

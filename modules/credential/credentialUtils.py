@@ -74,7 +74,12 @@ def getProjectCredentials(keys):
         # Credential data of a particular project
         with con.cursor() as cursor:
                 limit = "LIMIT {}, {}".format((int(keys['page'])*int(keys['limit'])), int(keys['limit']))
-                sql = "SELECT a.userId, a.canRead, a.canWrite, a.description  accessDesc, c.name AS credential, c.id, c.version, c.description AS credDesc, f.id, f.label, f.value FROM accessPermission AS a LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) LEFT JOIN (Select id, max(version) AS latest FROM credential group by id) AS mx ON mx.id = c.id LEFT JOIN field AS f ON f.credentialId = c.id WHERE c.version = latest AND a.canRead = 1 AND a.userId = {} AND f.version = latest AND c.projectId = {} {}".format(current_identity['userId'], keys['pId'], limit)                
+                sql = '''SELECT a.userId, a.canRead, a.canWrite, a.description  accessDesc, c.name AS credential,
+                 c.id, c.version, c.description AS credDesc, f.id, f.label, f.value FROM accessPermission AS a 
+                 LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) 
+                 LEFT JOIN (Select id, max(version) AS latest FROM credential group by id) AS mx ON mx.id = c.id 
+                 LEFT JOIN field AS f ON f.credentialId = c.id 
+                 WHERE c.version = latest AND a.canRead = 1 AND a.userId = {} AND f.version = latest AND c.projectId = {} {}'''.format(current_identity['userId'], keys['pId'], limit)                
                 cursor.execute(sql)
                 projectData = cursor.fetchall()
                 cursor.close()
@@ -85,8 +90,23 @@ def getProjectCredentials(keys):
                 cursor.execute(sql)
                 eventData = cursor.fetchall()
                 cursor.close()
+
+        # Total number of records
+        with con.cursor() as cursor:
+                sql = "SELECT count(a.id) AS count FROM accessPermission AS a LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) LEFT JOIN (Select id, max(version) AS latest FROM credential group by id) AS mx ON mx.id = c.id LEFT JOIN field AS f ON f.credentialId = c.id WHERE c.version = latest AND a.canRead = 1 AND a.userId = {} AND f.version = latest AND c.projectId = {}".format(current_identity['userId'], keys['pId'])                
+                cursor.execute(sql)
+                countData = cursor.fetchall()
+                cursor.close()
+
+        # Access permission data related to the project
+        with con.cursor() as cursor:
+                sql = "SELECT a.*, e.full_name, e.id, ((ifnull(a.canRead, 0) OR ifnull(a.canWrite, 0)) AND projectId = {0}) AS hasPermission FROM employee AS e LEFT JOIN accessPermission AS a ON a.userId = e.id WHERE projectId = {0} OR if(projectId != {0}, 0, 1) = 0 OR ifnull(projectId, 0) = 0 GROUP BY e.id".format(keys['pId'])                
+                cursor.execute(sql)
+                accessData = cursor.fetchall()
+                cursor.close()
+
         con.close()
-        return { 'projectData': projectData, 'eventData': eventData }
+        return { 'projectData': projectData, 'eventData': eventData , 'count': countData[0]['count'], 'accessData': accessData}
 
 def getProjects(keys):
         con = connect()
@@ -96,8 +116,15 @@ def getProjects(keys):
                 cursor.execute(sql)
                 data = cursor.fetchall()
                 cursor.close()
+
+        # Total number of records
+        with con.cursor() as cursor:
+                sql = "SELECT count(distinct(p.id)) AS count FROM accessPermission AS a LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) LEFT JOIN project AS p ON p.id = c.projectId WHERE a.canRead = 1 AND a.userId = {} GROUP BY a.projectId".format(current_identity['userId'])                
+                cursor.execute(sql)
+                countData = cursor.fetchall()
+                cursor.close()  
         con.close()
-        return data
+        return {'projectData' : data, 'count': countData[0]['count']}
 
 def checkCredentialAccess(credentialId):
         con = connect()
@@ -137,7 +164,7 @@ def getCredentialDetails(credentialId):
 
         # Access permission data related to the credential
         with con.cursor() as cursor:
-                sql = "SELECT a.*, e.full_name FROM accessPermission AS a LEFT JOIN employee AS e ON a.userId = e.id WHERE (a.credentialId = '{0}' OR a.projectId = (SELECT projectId FROM credential WHERE id = '{0}' GROUP BY projectId))".format(credentialId)                
+                sql = "SELECT a.*,e.id, e.full_name, (ifnull(a.canRead, 0) OR ifnull(a.canWrite, 0)) AS hasPermission FROM employee AS e LEFT JOIN accessPermission AS a ON a.userId = e.id WHERE credentialId = '{0}' OR projectId = (SELECT projectId FROM credential WHERE id = '{0}' GROUP BY projectId) OR ( ifnull(credentialId,0) = 0 AND (ifnull(projectId,0) = 0) ) GROUP BY e.id;".format(credentialId)                
                 cursor.execute(sql)
                 accessData = cursor.fetchall()
                 cursor.close()

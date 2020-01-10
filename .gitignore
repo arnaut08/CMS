@@ -134,3 +134,6 @@ configurations.py
 # VScode 
 launch.json
 settings.json
+
+# Upload Folder
+uploads/
