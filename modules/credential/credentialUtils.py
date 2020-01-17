@@ -232,7 +232,7 @@ def manageFavouriteCredential(params):
         starred = bool(int(params['star']))
         with con.cursor() as cursor:
                 if starred:
-                        sql = "UPDATE credential SET starredBy = IF(IFNULL(starredBy,0) = 0, '[\"{0}\"]', IF(JSON_CONTAINS_PATH(starredBy,'all',REPLACE(JSON_SEARCH(starredBy, 'one', {0}), '\"', '')), starredBy, JSON_ARRAY_INSERT(starredBy, '$[0]','{0}'))) WHERE id = '{1}'".format(current_identity['userId'], params['credentialId'])
+                        sql = "UPDATE credential SET starredBy = IF(IFNULL(starredBy, true) = true, '[\"{0}\"]', IF(JSON_CONTAINS_PATH(starredBy,'all',REPLACE(JSON_SEARCH(starredBy, 'one', {0}), '\"', '')), starredBy, JSON_ARRAY_INSERT(starredBy, '$[0]','{0}'))) WHERE id = '{1}'".format(current_identity['userId'], params['credentialId'])
                 else:
                         sql = "UPDATE credential SET starredBy = JSON_REMOVE(starredBy, REPLACE(JSON_SEARCH(starredBy, 'one', {}), '\"', '')) WHERE id = '{}'".format(current_identity['userId'], params['credentialId'])
                 cursor.execute(sql)

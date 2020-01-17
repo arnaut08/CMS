@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file, send_from_directory
 from modules.credential import credentialUtils as utils
 from modules.credential.credentialModel import CredentialModel, FieldModel
 from config import constants
@@ -85,3 +85,11 @@ def uploadFile():
     else:
         os.remove(data['filePath'])
         return jsonify(message = "File Removed Successfully")
+
+@credentialBlueprint.route('/file/<path:path>', methods=['GET'])
+@jwt_required()
+def getFile(path):
+    try:
+        return send_file('/{}'.format(path), as_attachment=True)
+    except FileNotFoundError:
+        return jsonify(error = "Please ensure that the path is correct")
