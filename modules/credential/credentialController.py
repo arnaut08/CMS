@@ -31,7 +31,7 @@ def manageCredential():
             else:
                 return jsonify(error = "You don't have permission to add a credential in this project"), constants.statusCode['error']['badRequest']
         elif request.method == 'PUT':
-            updated = utils.updateCredential(request.form)
+            updated = utils.updateCredential(data)
             if updated:
                 return jsonify(message = 'Credential Updated Successfully'), constants.statusCode['success']
             else:

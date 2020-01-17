@@ -17,13 +17,13 @@ def getSearchedUsers(params):
         con = connect()
         if 'projectId' in dict(params).keys():
                 with con.cursor() as cursor:
-                        sql = "SELECT (SELECT id FROM accessPermission WHERE userId = e.id AND projectId = {0}) AS id, ifnull(a.canRead, 0) as canRead, ifnull(a.canWrite, 0) as canWrite, a.description, ifnull(a.projectId, {0}) as projectId, e.full_name, e.id as userId FROM employees AS e LEFT JOIN accessPermission AS a ON a.userId = e.id WHERE e.full_name LIKE '%{1}%' AND (projectId = {0} OR if(projectId != {0}, 0, 1) = 0 OR ifnull(projectId, 0) = 0) GROUP BY e.id".format(params['projectId'], params['keyword'])                
+                        sql = "SELECT (SELECT id FROM accessPermission WHERE userId = e.id AND projectId = {0} GROUP BY projectId) AS id, ifnull(a.canRead, 0) as canRead, ifnull(a.canWrite, 0) as canWrite, a.description, ifnull(a.projectId, {0}) as projectId, e.full_name, e.id as userId FROM employees AS e LEFT JOIN accessPermission AS a ON a.userId = e.id WHERE e.full_name LIKE '%{1}%' AND (projectId = {0} OR if(projectId != {0}, 0, 1) = 0 OR ifnull(projectId, 0) = 0) GROUP BY e.id".format(params['projectId'], params['keyword'])                
                         cursor.execute(sql)
                         data = cursor.fetchall()
                         cursor.close()
         else:
                 with con.cursor() as cursor:
-                        sql = "SELECT (SELECT id FROM accessPermission WHERE userId = e.id AND credentialId = '{0}') AS id, ifnull(a.canRead, 0) as canRead, ifnull(a.canWrite, 0) as canWrite, ifnull(a.credentialId, '{0}') as credentialId ,e.id, e.full_name FROM employees AS e LEFT JOIN accessPermission AS a ON a.userId = e.id WHERE e.full_name LIKE '%{1}%' AND  (credentialId = '{0}' OR projectId = (SELECT projectId FROM credential WHERE id = '{0}' GROUP BY projectId) OR ( ifnull(credentialId,0) = 0 AND (ifnull(projectId,0) = 0) )) GROUP BY e.id;".format(params['credentialId'], params['keyword'])                
+                        sql = "SELECT (SELECT id FROM accessPermission WHERE userId = e.id AND credentialId = '{0}' GROUP BY credentialId) AS id, ifnull(a.canRead, 0) as canRead, ifnull(a.canWrite, 0) as canWrite, ifnull(a.credentialId, '{0}') as credentialId ,e.id, e.full_name FROM employees AS e LEFT JOIN accessPermission AS a ON a.userId = e.id WHERE e.full_name LIKE '%{1}%' AND  (credentialId = '{0}' OR projectId = (SELECT projectId FROM credential WHERE id = '{0}' GROUP BY projectId) OR ( ifnull(credentialId,0) = 0 AND (ifnull(projectId,0) = 0) )) GROUP BY e.id;".format(params['credentialId'], params['keyword'])                
                         cursor.execute(sql)
                         data = cursor.fetchall()
                         cursor.close()
