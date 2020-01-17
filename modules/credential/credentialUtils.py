@@ -84,15 +84,23 @@ def getProjectCredentials(keys):
                 limit = "LIMIT {}, {}".format((int(keys['page'])*int(keys['limit'])), int(keys['limit']))
                 sql = '''SELECT if(JSON_CONTAINS_PATH(c.starredBy,'all',REPLACE(JSON_SEARCH(starredBy, 'one', {0}), '"', '')), 1, 0) AS star,
                  a.userId, a.canRead, a.canWrite, a.description  accessDesc, c.name AS credential,
-                 c.id, c.version, c.description AS credDesc, f.id, f.label, f.value FROM accessPermission AS a 
+                 c.id, c.version, c.description AS credDesc FROM accessPermission AS a 
                  LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) 
                  LEFT JOIN (Select id, max(version) AS latest FROM credential group by id) AS mx ON mx.id = c.id 
-                 LEFT JOIN field AS f ON f.credentialId = c.id 
-                 WHERE c.version = latest AND a.canRead = 1 AND a.userId = {0} AND f.version = latest AND c.projectId = {1} {2}'''.format(current_identity['userId'], keys['pId'], limit)                
+                 WHERE c.version = latest AND a.canRead = 1 AND a.userId = {0} AND c.projectId = {1} {2}'''.format(current_identity['userId'], keys['pId'], limit)                
                 cursor.execute(sql)
                 projectData = cursor.fetchall()
                 cursor.close()
         
+        # Credential Fields' data
+        for credential in projectData:
+                with con.cursor() as cursor:
+                        sql = "SELECT f.id, f.label, f.value FROM credential AS c LEFT JOIN field AS f ON f.credentialId = c.id AND f.version = c.version LEFT JOIN (Select id, max(version) AS latest FROM credential group by id) AS mx ON mx.id = c.id WHERE c.version = latest and c.id = '{}'".format(credential['id'])                
+                        cursor.execute(sql)
+                        fieldData = cursor.fetchall()
+                        cursor.close()
+                credential['fields'] = fieldData
+
         # Event data related to the project
         with con.cursor() as cursor:
                 sql = "SELECT * FROM cmsEvents WHERE projectId = {}".format(keys['pId'])                
@@ -126,14 +134,14 @@ def getProjects(keys):
         if isAGroupMember:
                 with con.cursor() as cursor:
                         limit = "LIMIT {}, {}".format((int(keys['page'])*int(keys['limit'])), int(keys['limit']))
-                        sql = "SELECT p.id, project_name, if(ifnull(c.projectId, 0) = 0, 0, 1) as hasCredentials FROM project AS p LEFT JOIN credential AS c on c.projectId = p.id GROUP BY p.id {}".format(limit)                
+                        sql = "SELECT p.id, project_name, if(ifnull(c.projectId, 0) = 0, 0, 1) as hasCredentials FROM project AS p LEFT JOIN credential AS c on c.projectId = p.id WHERE ifnull(c.projectId, 0) != 0 GROUP BY p.id {}".format(limit)                
                         cursor.execute(sql)
                         data = cursor.fetchall()
                         cursor.close()
 
                 # Total number of records
                 with con.cursor() as cursor:
-                        sql = "SELECT COUNT(id) AS count FROM project"            
+                        sql = "SELECT COUNT(distinct(c.projectId)) AS count FROM project AS p LEFT JOIN credential AS c on c.projectId = p.id WHERE ifnull(c.projectId, 0) != 0"            
                         cursor.execute(sql)
                         countData = cursor.fetchall()
                         cursor.close()
@@ -154,7 +162,7 @@ def getProjects(keys):
         con.close()
         if not len(countData):
                 countData = [{'count' : 0}]
-        return {'projectData' : data, 'count': countData[0]['count']}
+        return {'projectData' : data, 'count': countData[0]['count'], 'canAddNew': int(isAGroupMember)}
 
 def checkCredentialAccess(credentialId):
         con = connect()
@@ -220,10 +228,19 @@ def getCredentialDetails(credentialId):
 def getFavouriteCredentials():
         con = connect()
         with con.cursor() as cursor:
-                sql = "SELECT c.id AS credential, c.name, c.version, c.description, f.id, f.label, f.value, p.project_name, c.createdAt FROM credential AS c LEFT JOIN field AS f ON f.credentialId = c.id AND f.version = c.version LEFT JOIN (Select id, max(version) AS latest FROM credential group by id) AS mx ON mx.id = c.id LEFT JOIN project AS p ON c.projectId = p.id WHERE c.version = latest AND IF(JSON_CONTAINS_PATH(starredBy,'all',REPLACE(JSON_SEARCH(starredBy, 'one', {}), '\"', '')), 1, 0) = 1".format(current_identity['userId'])                
+                sql = "SELECT c.id AS id, c.name, c.version, c.description, p.project_name, c.createdAt FROM credential AS c LEFT JOIN (Select id, max(version) AS latest FROM credential group by id) AS mx ON mx.id = c.id LEFT JOIN project AS p ON c.projectId = p.id WHERE c.version = latest AND IF(JSON_CONTAINS_PATH(starredBy,'all',REPLACE(JSON_SEARCH(starredBy, 'one', {}), '\"', '')), 1, 0) = 1".format(current_identity['userId'])                
                 cursor.execute(sql)
                 data = cursor.fetchall()
                 cursor.close()
+
+        # Credential Fields' data
+        for credential in data:
+                with con.cursor() as cursor:
+                        sql = "SELECT f.id, f.label, f.value FROM credential AS c LEFT JOIN field AS f ON f.credentialId = c.id AND f.version = c.version LEFT JOIN (Select id, max(version) AS latest FROM credential group by id) AS mx ON mx.id = c.id WHERE c.version = latest and c.id = '{}'".format(credential['id'])                
+                        cursor.execute(sql)
+                        fieldData = cursor.fetchall()
+                        cursor.close()
+                credential['fields'] = fieldData
         con.close()
         return data
 

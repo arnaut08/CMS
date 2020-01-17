@@ -1,6 +1,7 @@
 from flask import jsonify
 import requests, json
 from flask_jwt import JWT
+from config import constants
 
 class User(object):
     def __init__(self, id, name, error):
@@ -15,7 +16,7 @@ class User(object):
 def responseHandler(token, identity):
     user = identity.getValues()
     if user['error']:    
-        return jsonify({'error': user['error']})
+        return jsonify({'error': user['error']}), constants.statusCode['error']['badRequest']
     else:
         return jsonify({'access_token': token.decode('utf-8'), 'name': user['name'], 'id': user['id'] })
 
