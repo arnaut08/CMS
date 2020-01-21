@@ -78,3 +78,13 @@ def updateAccessPermission(data):
             con.commit()
             cursor.close() 
     con.close()
+
+def getProjectAccessData(userId):
+    con = connect()
+    with con.cursor() as cursor:                
+        sql = "SELECT * FROM accessPermission WHERE userId = {} AND IFNULL(projectId, 0) != 0".format(userId)
+        cursor.execute(sql)
+        data = cursor.fetchall()
+        cursor.close()
+    con.close()
+    return data

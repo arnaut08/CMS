@@ -23,3 +23,9 @@ def manageAccess():
             return jsonify(message = 'Access Permission Updated Successfully'), constants.statusCode['success']
     else:
         return jsonify(accessData.errors), constants.statusCode['error']['badRequest']
+
+@accessBlueprint.route('/<int:id>', methods=['GET'])
+@jwt_required()
+def getUserAccessData(id):
+    result = utils.getProjectAccessData(id)
+    return jsonify(data = result), constants.statusCode['success']
