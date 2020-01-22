@@ -234,12 +234,9 @@ def getCredentialDetails(credentialId):
                 cursor.close()
         con.close()
         hasWriteAccess = 0
-
-        for data in projectAccessData:
-                if (data['canWrite'] and data['userId'] == current_identity['userId']):
-                        hasWriteAccess = 1
-
-        for data in credentialAccessData:
+        accessData = list(projectAccessData[:])
+        accessData.extend(credentialAccessData)
+        for data in accessData:
                 if (data['canWrite'] and data['userId'] == current_identity['userId']):
                         hasWriteAccess = 1
         return { 'credentialData': credentialData, 'eventData': eventData, 'credentialAccessData': credentialAccessData, 'projectAccessData': projectAccessData, 'hasWriteAccess': hasWriteAccess, 'description': credentialData[len(credentialData)-1]['description'], 'name': credentialData[len(credentialData)-1]['name'], 'version': credentialData[len(credentialData)-1]['version'] }

@@ -27,5 +27,5 @@ def manageAccess():
 @accessBlueprint.route('/<int:id>', methods=['GET'])
 @jwt_required()
 def getUserAccessData(id):
-    result = utils.getProjectAccessData(id)
+    result = utils.getProjectAccessData(id, request.args)
     return jsonify(data = result), constants.statusCode['success']
