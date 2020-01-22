@@ -1,7 +1,7 @@
 from config.database import connect
 import json
 from flask_jwt import current_identity
-
+from modules.credential.credentialUtils import checkGroupMember
 
 def getSearchedCredentials(params):
         con = connect()
@@ -37,8 +37,27 @@ def getSearchedUsers(params):
                         cursor.close()
         else:
                 with con.cursor() as cursor:
-                        sql = "SELECT (SELECT id FROM accessPermission WHERE userId = e.id AND credentialId = '{0}' GROUP BY credentialId) AS id, ifnull(a.canRead, 0) as canRead, ifnull(a.canWrite, 0) as canWrite, ifnull(a.credentialId, '{0}') as credentialId ,e.id, e.full_name FROM employees AS e LEFT JOIN accessPermission AS a ON a.userId = e.id WHERE e.full_name LIKE '%{1}%' AND  (credentialId = '{0}' OR projectId = (SELECT projectId FROM credential WHERE id = '{0}' GROUP BY projectId) OR ( ifnull(credentialId,0) = 0 AND (ifnull(projectId,0) = 0) )) GROUP BY e.id;".format(params['credentialId'], params['keyword'])                
+                        sql = "SELECT (SELECT id FROM accessPermission WHERE userId = e.id AND credentialId = '{0}' GROUP BY credentialId) AS id, ifnull(a.canRead, 0) as canRead, ifnull(a.canWrite, 0) as canWrite, ifnull(a.credentialId, '{0}') as credentialId ,e.id as userId, e.full_name FROM employees AS e LEFT JOIN accessPermission AS a ON a.userId = e.id WHERE e.full_name LIKE '%{1}%' AND  (credentialId = '{0}' OR projectId = (SELECT projectId FROM credential WHERE id = '{0}' GROUP BY projectId) OR ( ifnull(credentialId,0) = 0 AND (ifnull(projectId,0) = 0) )) GROUP BY e.id;".format(params['credentialId'], params['keyword'])                
                         cursor.execute(sql)
                         data = cursor.fetchall()
                         cursor.close()
+        con.close()
+        return data
+
+def getSearchedProjects(params):
+        con = connect()
+        isAGroupMember = checkGroupMember()
+        if isAGroupMember:
+                with con.cursor() as cursor:
+                        sql = "SELECT id, project_name, created_at FROM project"               
+                        cursor.execute(sql)
+                        data = cursor.fetchall()
+                        cursor.close()
+        else:
+                with con.cursor() as cursor:
+                        sql = "SELECT p.id, project_name, p.created_at FROM accessPermission AS a LEFT JOIN project AS p ON (a.projectId = p.id OR (SELECT projectId FROM credential WHERE id = a.credentialId GROUP BY id) = p.id) WHERE a.userId = {} GROUP BY p.id".format(current_identity['userId'])               
+                        cursor.execute(sql)
+                        data = cursor.fetchall()
+                        cursor.close()
+        con.close()
         return data

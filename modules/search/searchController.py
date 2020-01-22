@@ -27,3 +27,9 @@ def searchEmployees():
         return jsonify(data = result), constants.statusCode['success']    
     else:
         return jsonify(error = data.errors), constants.statusCode['error']['badRequest']
+
+@searchBlueprint.route("/project", methods=['GET'])
+@jwt_required()
+def searchProjects():
+    result = utils.getSearchedProjects(request.args)
+    return jsonify(data = result), constants.statusCode['success']      
