@@ -11,6 +11,7 @@ credentialBlueprint = Blueprint('credentialBlueprint', __name__)
 @credentialBlueprint.route('', methods=['POST', 'PUT'])
 @jwt_required()
 def manageCredential():
+    # To convert the data into immutable multidict in order for it to be compatible with the model
     data = im.copy(json.loads(request.data.decode('utf8')))
     credentialData = CredentialModel(data)
     fieldValidity = True

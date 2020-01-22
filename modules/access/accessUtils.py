@@ -5,7 +5,7 @@ from config import constants
 def addAccessPermission(data):
     con = connect()
     # For Credential based access
-    if "credentialId" in dict(data).keys():
+    if "credentialId" in dict(data).keys() and data['credentialId']:
         with con.cursor() as cursor:
             sql = "INSERT INTO accessPermission (userId, canRead, canWrite, description, credentialId) VALUES ({}, {}, {}, '{}', '{}')".format(data['userId'], data['canRead'], data['canWrite'], data['description'] or "", data['credentialId'])  
             cursor.execute(sql) 
@@ -48,7 +48,7 @@ def addAccessPermission(data):
 def updateAccessPermission(data):
     con = connect()
     # For Credential based access
-    if "credentialId" in data.keys():
+    if "credentialId" in data.keys() and data['credentialId']:
         with con.cursor() as cursor:
             sql = "UPDATE accessPermission SET userId = {}, canRead = {}, canWrite = {}, description = '{}', credentialId = '{}' WHERE id = {}".format(data['userId'], data['canRead'], data['canWrite'], data['description'] or "", data['credentialId'], data['id'])  
             cursor.execute(sql) 
@@ -95,3 +95,4 @@ def getProjectAccessData(userId, params):
             cursor.close()
     con.close()
     return data
+

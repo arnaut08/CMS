@@ -2,6 +2,7 @@ from flask import jsonify
 import requests, json
 from flask_jwt import JWT
 from config import constants
+from modules.credential.credentialUtils import checkGroupMember
 
 class User(object):
     def __init__(self, id, name, error):
@@ -18,7 +19,8 @@ def responseHandler(token, identity):
     if user['error']:    
         return jsonify({'error': user['error']}), constants.statusCode['error']['badRequest']
     else:
-        return jsonify({'access_token': token.decode('utf-8'), 'name': user['name'], 'id': user['id'] })
+        canAddNew = checkGroupMember(user['id'])
+        return jsonify({'access_token': token.decode('utf-8'), 'name': user['name'], 'id': user['id'], 'canAddNew': int(canAddNew) })
 
 def verify(email, password):
     responseObj = requests.post('https://hrms.solutionanalysts.com/php/auth/login',json.dumps({"email":email,"password":password})).json()

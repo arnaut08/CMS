@@ -7,7 +7,7 @@ def getSearchedCredentials(params):
         con = connect()
         with con.cursor() as cursor:
                 limit = "LIMIT {}, {}".format((int(params['page'])*int(params['limit'])), int(params['limit']))
-                sql = '''SELECT c.id AS id, c.name, c.version, c.description, p.project_name, c.createdAt FROM accessPermission AS a 
+                sql = '''SELECT c.id AS id, c.name, c.version, c.description, p.project_name, c.createdAt, c.projectId FROM accessPermission AS a 
                 LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) 
                 LEFT JOIN (Select id, max(version) AS latest FROM credential group by id) AS mx ON mx.id = c.id 
                 LEFT JOIN field AS f ON f.credentialId = c.id LEFT JOIN project AS p ON c.projectId = p.id 

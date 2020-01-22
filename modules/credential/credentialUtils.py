@@ -68,6 +68,8 @@ def updateCredentialFields(con, data, credentialId):
                 with con.cursor() as cursor:
                         if not obj['f_id']:
                                 obj['f_id'] = utils.generateAlphanumericKey()
+                        if not obj['f_version']:
+                                obj['f_version'] = data[0]['f_version']
                         obj['f_version'] += 1
                         sql = "INSERT INTO field(id, credentialId, fieldType, label, value, version) VALUES ('{}', '{}', '{}', '{}', '{}', {})".format(obj['f_id'], credentialId, obj['fieldType'], obj['label'], obj['value'], obj['f_version'])
                         cursor.execute(sql)
@@ -184,10 +186,10 @@ def checkProjectAccess(projectId):
         return bool(len(data) or isAGroupMember)
 
 
-def checkGroupMember():
+def checkGroupMember(userId = 0):
         con = connect()
         with con.cursor() as cursor:
-                sql = "SELECT ge.id FROM groups_employees AS ge LEFT JOIN groups AS g ON g.id = ge.group_id WHERE g.id = 18 AND ge.employee_id = {}".format(current_identity['userId'])                                
+                sql = "SELECT ge.id FROM groups_employees AS ge LEFT JOIN groups AS g ON g.id = ge.group_id WHERE g.id = 18 AND ge.employee_id = {}".format(userId or current_identity['userId'])                                
                 cursor.execute(sql)
                 groupData = cursor.fetchall()
                 cursor.close()        
