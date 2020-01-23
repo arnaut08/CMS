@@ -3,7 +3,7 @@ from flask_jwt import jwt_required
 from config import constants
 import json
 import modules.search.searchUtils as utils
-from modules.search.searchModel import SearchEmployeeModel
+from modules.search.searchModel import SearchModel
 
 
 searchBlueprint = Blueprint('searchBlueprint', __name__)
@@ -21,7 +21,7 @@ def searchCredentials():
 @searchBlueprint.route("/employee", methods=['GET'])
 @jwt_required()
 def searchEmployees():
-    data = SearchEmployeeModel(request.args)
+    data = SearchModel(request.args)
     if data.validate():
         result = utils.getSearchedUsers(request.args)
         return jsonify(data = result), constants.statusCode['success']    
@@ -31,5 +31,9 @@ def searchEmployees():
 @searchBlueprint.route("/project", methods=['GET'])
 @jwt_required()
 def searchProjects():
-    result = utils.getSearchedProjects(request.args)
-    return jsonify(data = result), constants.statusCode['success']      
+    data = SearchModel(request.args)
+    if data.validate():
+        result = utils.getSearchedProjects(request.args)
+        return jsonify(data = result), constants.statusCode['success']    
+    else:
+        return jsonify(error = data.errors), constants.statusCode['error']['badRequest']     

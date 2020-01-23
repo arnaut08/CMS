@@ -49,13 +49,13 @@ def getSearchedProjects(params):
         isAGroupMember = checkGroupMember()
         if isAGroupMember:
                 with con.cursor() as cursor:
-                        sql = "SELECT id, project_name, created_at FROM project"               
+                        sql = "SELECT id, project_name, created_at FROM project WHERE project_name LIKE '%{}%'".format(params['keyword'])               
                         cursor.execute(sql)
                         data = cursor.fetchall()
                         cursor.close()
         else:
                 with con.cursor() as cursor:
-                        sql = "SELECT p.id, project_name, p.created_at FROM accessPermission AS a LEFT JOIN project AS p ON (a.projectId = p.id OR (SELECT projectId FROM credential WHERE id = a.credentialId GROUP BY id) = p.id) WHERE a.userId = {} GROUP BY p.id".format(current_identity['userId'])               
+                        sql = "SELECT p.id, project_name, p.created_at FROM accessPermission AS a LEFT JOIN project AS p ON (a.projectId = p.id OR (SELECT projectId FROM credential WHERE id = a.credentialId GROUP BY id) = p.id) WHERE a.userId = {} AND p.name LIKE '%{}%' GROUP BY p.id".format(current_identity['userId'], params['keyword'])               
                         cursor.execute(sql)
                         data = cursor.fetchall()
                         cursor.close()
