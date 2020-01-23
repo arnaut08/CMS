@@ -133,14 +133,14 @@ def getProjects(keys):
         isAGroupMember = checkGroupMember()       
         with con.cursor() as cursor:
                 limit = "LIMIT {}, {}".format((int(keys['page'])*int(keys['limit'])), int(keys['limit']))
-                sql = "SELECT p.id, p.project_name FROM accessPermission AS a LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) LEFT JOIN project AS p ON p.id = c.projectId OR p.id = a.projectId  WHERE a.canRead = 1 AND a.userId = {} GROUP BY p.id {}".format(current_identity['userId'], limit)                
+                sql = "SELECT p.id, p.project_name, p.created_at, (SELECT count(distinct(id)) FROM credential WHERE projectId = p.id) AS credentialCount FROM accessPermission AS a LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) LEFT JOIN project AS p ON p.id = c.projectId OR p.id = a.projectId  WHERE a.canRead = 1 AND a.userId = {} GROUP BY p.id {}".format(current_identity['userId'], limit)                
                 cursor.execute(sql)
                 data = cursor.fetchall()
                 cursor.close()
 
         # Total number of records
         with con.cursor() as cursor:
-                sql = "SELECT COUNT(distinct(p.id)) AS count FROM accessPermission AS a LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) LEFT JOIN project AS p ON p.id = c.projectId WHERE a.canRead = 1 AND a.userId = {} GROUP BY a.projectId".format(current_identity['userId'])                
+                sql = "SELECT COUNT(distinct(p.id)) AS count FROM accessPermission AS a LEFT JOIN credential AS c ON (c.id = credentialId or c.projectId = a.projectId) LEFT JOIN project AS p ON p.id = c.projectId WHERE a.canRead = 1 AND a.userId = {} GROUP BY p.id".format(current_identity['userId'])                
                 cursor.execute(sql)
                 countData = cursor.fetchall()
                 cursor.close()  
