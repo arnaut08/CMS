@@ -9,7 +9,7 @@ statusCode = {
     }
 }
 
-fieldTypes = ['username', 'password', 'file', 'key', 'software']
+fieldTypes = ['username', 'password', 'file', 'key', 'software', 'link']
 
 # Event Comments Skeleton
 addCredential = " added credential "

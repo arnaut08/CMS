@@ -15,7 +15,7 @@ def addAccessPermission(data):
             
         # To insert in the event table
         with con.cursor() as cursor:
-            sql = "INSERT INTO cmsEvents(credentialId, projectId, userId, comments) (Select '{cred}', projectId, {assignee}, concat((select full_name from employees where id={assignee}), '{operation}', (select full_name from employees where id={user}), '{source}', (select name from credential where id='{cred}' group by id)) FROM credential WHERE id = '{cred}' GROUP BY projectId)".format(assignee = current_identity['userId'], cred = data['credentialId'], operation = constants.giveAccess, source = constants.forCredential, user = data['userId'])
+            sql = "INSERT INTO cmsEvents(credentialId, projectId, userId, comments) (Select '{cred}', projectId, {assignee}, concat((select full_name from employees where id={assignee}), '{operation}', (select full_name from employees where id={user}), '{source}', (select name from credential where id='{cred}' group by name order by createdAt desc limit 1)) FROM credential WHERE id = '{cred}' GROUP BY projectId)".format(assignee = current_identity['userId'], cred = data['credentialId'], operation = constants.giveAccess, source = constants.forCredential, user = data['userId'])
             cursor.execute(sql)
             con.commit()
             cursor.close() 
@@ -57,7 +57,7 @@ def updateAccessPermission(data):
 
         # To insert in the event table
         with con.cursor() as cursor:
-            sql = "INSERT INTO cmsEvents(credentialId, projectId, userId, comments) (Select '{cred}', projectId, {assignee}, concat((select full_name from employees where id={assignee}), '{operation}', (select full_name from employees where id={user}), '{source}', (select name from credential where id='{cred}' group by id)) FROM credential WHERE id = '{cred}' GROUP BY projectId)".format(assignee = current_identity['userId'], cred = data['credentialId'], operation = constants.updateAccess, source = constants.forCredential, user = data['userId'])
+            sql = "INSERT INTO cmsEvents(credentialId, projectId, userId, comments) (Select '{cred}', projectId, {assignee}, concat((select full_name from employees where id={assignee}), '{operation}', (select full_name from employees where id={user}), '{source}', (select name from credential where id='{cred}' group by name order by createdAt desc limit 1)) FROM credential WHERE id = '{cred}' GROUP BY projectId)".format(assignee = current_identity['userId'], cred = data['credentialId'], operation = constants.updateAccess, source = constants.forCredential, user = data['userId'])
             cursor.execute(sql)
             con.commit()
             cursor.close() 

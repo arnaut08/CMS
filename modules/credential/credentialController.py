@@ -1,18 +1,18 @@
-from flask import Blueprint, jsonify, request, send_file, send_from_directory
+from flask import Blueprint, request, send_file
 from modules.credential import credentialUtils as utils
 from modules.credential.credentialModel import CredentialModel, FieldModel
-from config import constants
 from werkzeug.datastructures import ImmutableMultiDict as im
 from flask_jwt import jwt_required
 import json, os
+from language import translation_en as translate
+from helper import utils as helperUtils
 
 credentialBlueprint = Blueprint('credentialBlueprint', __name__)
 
 @credentialBlueprint.route('', methods=['POST', 'PUT'])
 @jwt_required()
 def manageCredential():
-    # To convert the data into immutable multidict in order for it to be compatible with the model
-    data = im.copy(json.loads(request.data.decode('utf8')))
+    data = helperUtils.toImmutableDictionary(request.data)
     credentialData = CredentialModel(data)
     fieldValidity = True
     for field in json.loads(data['fields']):
@@ -28,31 +28,31 @@ def manageCredential():
         if request.method == 'POST':
             added = utils.addCredential(data)
             if added:
-                return jsonify(message = 'Credential Added Successfully'), constants.statusCode['success']
+                return helperUtils.messageResponse(translate.addCredential)
             else:
-                return jsonify(error = "You don't have permission to add a credential in this project"), constants.statusCode['error']['badRequest']
+                return helperUtils.error(translate.addCredentialPermission)
         elif request.method == 'PUT':
             updated = utils.updateCredential(data)
             if updated:
-                return jsonify(message = 'Credential Updated Successfully'), constants.statusCode['success']
+                return helperUtils.messageResponse(translate.updateCredential)
             else:
-                return jsonify(error = "You don't have permission to update this credential"), constants.statusCode['error']['badRequest']                
+                return helperUtils.error(translate.updateCredentialPermission)
     else:
-        return jsonify(credentialData.errors or errorObj), constants.statusCode['error']['badRequest']
+        return helperUtils.validationError(credentialData.errors or errorObj)
 
 @credentialBlueprint.route('/projects', methods=['GET'])
 @jwt_required()
 def getProjectsAndCredentials():
     keys = dict(request.args).keys()
     result = utils.getProjectCredentials(request.args) if ('pId' in keys) else utils.getProjects(request.args)
-    return jsonify(data = result), constants.statusCode['success']
+    return helperUtils.dataResponse(result)
 
 
 @credentialBlueprint.route('/<string:credentialId>', methods=['GET'])
 @jwt_required()
 def getCredentialDetails(credentialId):
     result = utils.getCredentialDetails(credentialId)
-    return jsonify(data = result), constants.statusCode['success']
+    return helperUtils.dataResponse(result)
 
 
 @credentialBlueprint.route('/star', methods=['GET', 'POST'])
@@ -60,13 +60,13 @@ def getCredentialDetails(credentialId):
 def manageStarredCredentials():
     if request.method == 'GET':
         result = utils.getFavouriteCredentials()
-        return jsonify(data = result), constants.statusCode['success']
+        return helperUtils.dataResponse(result)
     else:
-        starred = utils.manageFavouriteCredential(json.loads(request.data.decode('utf8')))
+        starred = utils.manageFavouriteCredential(helperUtils.toImmutableDictionary(request.data))
         if starred:
-            return jsonify(message = 'Credential Added to Favourites Successfully'), constants.statusCode['success']
+            return helperUtils.messageResponse(translate.addFavourite)
         else:
-            return jsonify(message = "Credential Removed from Favourites Successfully"), constants.statusCode['success']
+            return helperUtils.messageResponse(translate.removeFavourite)
 
 @credentialBlueprint.route('/upload', methods=['POST', 'DELETE'])
 @jwt_required()
@@ -82,10 +82,10 @@ def uploadFile():
         except FileNotFoundError:
             os.makedirs(uploadPath)
             files.save(os.path.join(uploadPath, files.filename))
-        return jsonify(message = "File Uploaded Successfully", path = os.path.join(uploadPath, files.filename))
+        return helperUtils.responseWithMessageAndData({'path': os.path.join(uploadPath, files.filename)}, translate.uploadFile)
     else:
         os.remove(data['filePath'])
-        return jsonify(message = "File Removed Successfully")
+        return helperUtils.messageResponse(translate.removeFile)
 
 @credentialBlueprint.route('/file/<path:path>', methods=['GET'])
 @jwt_required()
@@ -93,4 +93,4 @@ def getFile(path):
     try:
         return send_file('/{}'.format(path), as_attachment=True)
     except FileNotFoundError:
-        return jsonify(error = "Please ensure that the path is correct")
+        return helperUtils.error(translate.incorrectPath)
